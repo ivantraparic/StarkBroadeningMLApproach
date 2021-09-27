@@ -887,3 +887,151 @@ else:
     py.legend(loc='best',fontsize = 11)
     py.savefig('C:/Users/ivant/Desktop/Python/MLFakultet/{}{}pred.png'.format(emitername,modelname), bbox_inches = 'tight')
     py.show()
+    
+#######################################################################################################################################
+###################################################     Plotting the predictions      #################################################
+###################################################  of the model using interpolation #################################################
+###################################################     between input parameters      #################################################
+#######################################################################################################################################
+
+#######################################################################################################################################
+##############################################################  Data needed ###########################################################
+#######################################################################################################################################
+
+emiter = 'Li'
+emitername = 'Li I'
+T = 30000
+N = '1e16'
+
+Z = PSE.get(emiter)
+matplotlib.rc('xtick', labelsize = 14)
+matplotlib.rc('ytick', labelsize = 14)
+
+#Filtriranje podataka iz baze
+dataI = data.loc[data['Emiter']==Z]
+dataII = dataI.loc[dataI['Ne'] == float(N)]
+dataIII = dataII.loc[dataII['Temp'] == T]
+
+#Ucitavanje podataka
+ElectronW = dataIII['w'].values.tolist()
+chi = dataIII['chi'].values.tolist()
+wrad = dataIII['wrad'].values.tolist()
+
+###################################################################
+######################  Transition finding ########################
+###################################################################
+
+#Paths for transitions (to the folders)
+pathNIST = r"C:/Users/ivant/Desktop/Python/NIST integration/ProbaNISTformerging"
+pathStark = r"C:/Users/ivant/Desktop/Python/NIST integration/StarkProba"
+
+#Instance of Transition finding class
+MyTransition = TransitionFinding(pathNIST, pathStark)
+transitions, TransitionTerms = MyTransition.FindTransitions(emitername, str(N), T)
+
+#Selection of spectral series
+prompt1 = input("Number of wanted transitions to search (or if you want all, just type All): ")
+wantedTransition = []
+
+if prompt1 != "All":
+    for i in range(int(prompt1)):
+        t = input("Transition {}: ".format(i))
+        wantedTransition.append(t)
+
+    all_transitions, wantedResult = MyTransition.MatchingTransitions(transitions, wantedTransition, TransitionTerms)
+    all_transitions = MyTransition.RemoveNans(all_transitions)
+
+else:
+    wt = []
+    for j in range(len(transitions)):
+        lineloc = transitions[j][0].index("-")
+        secondPart = transitions[j][0][lineloc+1:]
+        if len(secondPart) == 2:
+            s = secondPart.replace(secondPart[0],"n")
+            wt.append(transitions[j][0][0:lineloc+1]+s)
+
+        elif len(secondPart) == 3:
+            s = secondPart.replace(secondPart[0:2],"n")
+            wt.append(transitions[j][0][0:lineloc+1]+s)
+
+    for tran in wt:
+        if tran not in wantedTransition:
+            wantedTransition.append(tran)
+
+    all_transitions, wantedResult = MyTransition.MatchingTransitions(transitions, wantedTransition, TransitionTerms)
+    all_transitions = MyTransition.RemoveNans(all_transitions)
+
+###################################################################
+######################  Preparation for  ##########################
+######################   Interpolation   ##########################
+###################################################################
+
+#series choosing
+spectral_series = []
+for vector in all_transitions:
+    if vector[0][0] not in spectral_series:
+        spectral_series.append(vector[0][0])
+
+dfs = [[] for j in range(len(spectral_series))]
+elws = [[] for j in range(len(spectral_series))]
+
+#Taking of Stark widths for every series
+for j in range(len(spectral_series)):
+    for vector in all_transitions:
+        if spectral_series[j] == vector[0][0]:
+            d = dataIII.loc[dataIII['w'] == vector[1]]
+            elws[j].append(d['wrad'].values[0])
+
+#Featues extraction
+for j in range(len(elws)):
+    my_data = dataIII.loc[dataIII['wrad'].isin(elws[j])]
+    dfs[j].append(my_data)
+
+###################################################################
+########################   Tables for   ###########################
+########################  Interpolation ###########################
+###################################################################
+
+new_dfs = [[] for j in range(len(dfs))] #Novi dataframeovi koji sadrze tacke izmedju ulaznih podataka
+help_list = [] #Pomocna lista za kreiranje kolona
+y_fixed = [[] for j in range(len(dfs))]
+
+for j in range(len(dfs)):
+    y_fixed[j] = dfs[j][0].wrad
+    dfs[j][0] = dfs[j][0].drop(['TD', 'w', 'wrad'], axis=1)
+    
+    for column in dfs[j][0].columns:
+        if column == "Emiter" or column == "Z" or column == "Temp" or column == "Ne" or column == "J_donje" or column == "J_gornje" or column == "nf" or column == "lf" or column == "li" or column == 'Osn nivo':
+            help_list.append((column, np.linspace(min(dfs[j][0][column]), max(dfs[j][0][column]),100)))
+        else:
+            help_list.append((column, np.linspace(min(dfs[j][0][column]), max(dfs[j][0][column]+5),100)))
+            
+    newdf = pd.DataFrame()
+    for k in range(len(help_list)):
+        newdf[f'{help_list[k][0]}'] = help_list[k][1]
+    
+    new_dfs[j].append(newdf)
+    
+###################################################################
+############################## Plotting ###########################
+###################################################################
+
+y_pred = [[] for j in range(len(new_dfs))]
+
+for j in range(len(y_pred)):
+    y_pred[j] = rf_model.predict(new_dfs[j][0])
+
+saving_path = r'C:/Users/ivant/Desktop/Python/MLFakultet/Li I Serije'
+for j in range(len(y_pred)):
+    chi_fixed = dfs[j][0].chi
+    chi_new = new_dfs[j][0].chi
+    py.figure(figsize = (6.4,6.2))
+    py.loglog(chi_fixed, y_fixed[j], 'ks', markersize = 5.0, label = str(spectral_series[j]))
+    py.loglog(chi_new, y_pred[j], 'r-', markersize = 3.5, label = str(spectral_series[j])+' model prediction')
+    py.xlabel(r'$\chi^{-1}$ [1/eV]', fontsize = 14)
+    py.ylabel(r'$\omega$ [rad/s]', fontsize = 14)
+    py.xlim((min(chi_fixed)-0.1, 10))
+    py.ylim((min(y_fixed[j])*2/5,3e13))
+    py.legend(loc='lower right', fontsize = 12)
+    py.savefig(f'{saving_path}/{spectral_series[j]}.png', bbox_inches = 'tight')
+    py.show()
