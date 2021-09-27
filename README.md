@@ -3,6 +3,8 @@ Predicting Stark Broadening of a line using ML algorithm
 
 Complete code is given in the file MLModel.py 
 
+Our final dataset used is given in MLData.csv
+
 After importing of all libraries that are needed, we created a class TransitionFinding in order to find wanted spectral transition from database, in order to show regularities on graph. This is the sole purpose of this class
 
 After definition of the class we proceeded with data cleaning, where the steps are clearly visible.
