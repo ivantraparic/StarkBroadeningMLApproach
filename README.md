@@ -5,7 +5,9 @@ Complete code is given in the file MLModel.py
 
 Our final dataset used is given in MLData.csv
 
-After importing of all libraries that are needed, we created a class TransitionFinding in order to find wanted spectral transition from database, in order to show regularities on graph. This is the sole purpose of this class
+Folders containing all emiters are not given because there is too much files to be uploaded in one folder (around 527 files in each folder). They could be sent by author if asked as a zip file.
+
+After importing of all libraries that are needed, we created a class TransitionFinding in order to find wanted spectral transition from database, to later show regularities on graph. This is the sole purpose of this class.
 
 After definition of the class we proceeded with data cleaning, where the steps are clearly visible.
 
