@@ -1,6 +1,6 @@
 If you use this database, please cite:
 
-Tapalaga, I., Trapari ́c, I., Trklja Boca, N., et al. 2022, Neural Comput. Applic., 34, 6349
+Tapalaga, I., Traparic, I., Trklja Boca, N., et al. 2022, Neural Comput. Applic., 34, 6349
 
 # StarkBroadeningMLApproach
 Predicting Stark Broadening of a line using ML algorithm
