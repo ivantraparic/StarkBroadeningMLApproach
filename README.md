@@ -1,3 +1,7 @@
+If you use this database, please cite:
+
+Tapalaga, I., Trapari ́c, I., Trklja Boca, N., et al. 2022, Neural Comput. Applic., 34, 6349
+
 # StarkBroadeningMLApproach
 Predicting Stark Broadening of a line using ML algorithm
 
@@ -20,3 +24,5 @@ Next step in code is import of transitions of element for which we want to predi
 Finally we make predictions of new widths with defined model, and the rest of the code there is just preparation of the graphs.
 
 Additionaly we performed analysis to see whether the model will predict quantum structure of atomic transitions or not. That is the last part of the code. 
+
+
